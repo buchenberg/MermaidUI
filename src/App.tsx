@@ -1,26 +1,12 @@
 import { useState, useEffect } from 'react';
 import CollectionsBrowser from './components/CollectionsBrowser';
 import DiagramEditor from './components/DiagramEditor';
+import * as api from './api';
+import type { Collection, Diagram } from './api';
 import './App.css';
 
-const API_BASE = 'http://localhost:3001/api';
-
-export interface Collection {
-  id: number;
-  name: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Diagram {
-  id: number;
-  collection_id: number;
-  name: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
-}
+// Re-export types for components that import from App.tsx
+export type { Collection, Diagram };
 
 function App() {
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
@@ -32,28 +18,14 @@ function App() {
   }, []);
 
   const fetchCollections = async () => {
-    const maxRetries = 5;
-    const retryDelay = 1000; // 1 second
-    
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        const response = await fetch(`${API_BASE}/collections`);
-        if (response.ok) {
-          const data = await response.json();
-          setCollections(data);
-          if (data.length > 0 && !selectedCollection) {
-            setSelectedCollection(data[0]);
-          }
-          return;
-        }
-      } catch (error) {
-        if (i === maxRetries - 1) {
-          console.error('Failed to fetch collections after retries:', error);
-        } else {
-          console.log(`Retrying connection to backend... (${i + 1}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-        }
+    try {
+      const data = await api.getCollections();
+      setCollections(data);
+      if (data.length > 0 && !selectedCollection) {
+        setSelectedCollection(data[0]);
       }
+    } catch (error) {
+      console.error('Failed to fetch collections:', error);
     }
   };
 
@@ -68,12 +40,7 @@ function App() {
 
   const handleDiagramCreate = async (collectionId: number, name: string, content: string) => {
     try {
-      const response = await fetch(`${API_BASE}/diagrams`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ collection_id: collectionId, name, content }),
-      });
-      const newDiagram = await response.json();
+      const newDiagram = await api.createDiagram(collectionId, name, content);
       setSelectedDiagram(newDiagram);
       return newDiagram;
     } catch (error) {
@@ -84,12 +51,7 @@ function App() {
 
   const handleDiagramUpdate = async (diagramId: number, name: string, content: string) => {
     try {
-      const response = await fetch(`${API_BASE}/diagrams/${diagramId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, content }),
-      });
-      const updatedDiagram = await response.json();
+      const updatedDiagram = await api.updateDiagram(diagramId, name, content);
       setSelectedDiagram(updatedDiagram);
       return updatedDiagram;
     } catch (error) {
@@ -100,12 +62,7 @@ function App() {
 
   const handleCollectionCreate = async (name: string, description?: string) => {
     try {
-      const response = await fetch(`${API_BASE}/collections`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
-      });
-      const newCollection = await response.json();
+      const newCollection = await api.createCollection(name, description);
       setCollections([...collections, newCollection]);
       setSelectedCollection(newCollection);
       return newCollection;
@@ -117,10 +74,8 @@ function App() {
 
   const handleCollectionDelete = async (collectionId: number) => {
     try {
-      const response = await fetch(`${API_BASE}/collections/${collectionId}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
+      const success = await api.deleteCollection(collectionId);
+      if (success) {
         const updatedCollections = collections.filter(c => c.id !== collectionId);
         setCollections(updatedCollections);
         if (selectedCollection?.id === collectionId) {
@@ -138,10 +93,8 @@ function App() {
 
   const handleDiagramDelete = async (diagramId: number) => {
     try {
-      const response = await fetch(`${API_BASE}/diagrams/${diagramId}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
+      const success = await api.deleteDiagram(diagramId);
+      if (success) {
         if (selectedDiagram?.id === diagramId) {
           setSelectedDiagram(null);
         }

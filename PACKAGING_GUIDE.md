@@ -1,170 +1,131 @@
 # Tauri Packaging Guide for MermaidUI
 
-## Current Issues
+## Current Status
 
-The current setup **will NOT work** in a packaged Tauri application because:
+✅ **The application is ready for packaging!** 
 
-1. **Backend server** runs as separate Node.js process - not bundled
-2. **Database path** uses `process.cwd()` which is read-only in packaged apps
-3. **Frontend hardcodes** `http://localhost:3001/api` - backend won't be running
-4. **Node.js runtime** not included in the bundle
+The application has been fully migrated to use Tauri IPC for all backend operations. This means:
 
-## Required Changes
+- ✅ No Node.js backend required
+- ✅ Database uses app data directory (works in packaged apps)
+- ✅ Frontend uses Tauri IPC (no HTTP server needed)
+- ✅ All dependencies are bundled with Tauri
 
-### Option 1: Bundle Backend with Tauri (Recommended)
+## Architecture
 
-#### 1. Update Database Path to User Data Directory
+The application uses a **two-tier architecture**:
 
-**File: `backend/src/database.ts`**
-```typescript
-import sqlite3 from 'sqlite3';
-import path from 'path';
-import { appDataDir } from '@tauri-apps/api/path'; // Tauri v1 doesn't have this, need alternative
+- **Frontend**: React + TypeScript + Vite (`src/`)
+- **Backend**: Rust (`src-tauri/src/`) - Tauri IPC commands handle all database operations
+- **Database**: SQLite via `rusqlite` - stored in app data directory
 
-// For Tauri v1, use environment variable or pass path from Rust
-const dbPath = process.env.DATABASE_PATH || path.join(
-  process.env.APPDATA || process.env.HOME || process.cwd(),
-  'MermaidUI',
-  'mermaid-ui.db'
-);
+## Database Location
 
-// Ensure directory exists
-import fs from 'fs';
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
-}
+The database is automatically stored in the appropriate app data directory for each platform:
+
+- **Windows**: `%APPDATA%\com.mermaidui.app\mermaid-ui.db`
+- **macOS**: `~/Library/Application Support/com.mermaidui.app/mermaid-ui.db`
+- **Linux**: `~/.local/share/com.mermaidui.app/mermaid-ui.db`
+
+This ensures the database persists across updates and works correctly in packaged applications.
+
+## Building for Production
+
+To build the application for distribution:
+
+```bash
+npm run build
 ```
 
-#### 2. Make API URL Configurable
+This will:
+1. Build the frontend React app (outputs to `dist/`)
+2. Build the Tauri application bundle
 
-**File: `src/App.tsx`**
-```typescript
-// Detect if running in Tauri
-import { invoke } from '@tauri-apps/api/tauri';
+The built application will be in `src-tauri/target/release/` (or `debug` for debug builds).
 
-const API_BASE = import.meta.env.DEV 
-  ? 'http://localhost:3001/api'  // Development
-  : 'http://localhost:3001/api'; // Production - backend will be bundled
+### Platform-Specific Builds
+
+To build for a specific platform:
+
+```bash
+# Windows
+npm run tauri build -- --target x86_64-pc-windows-msvc
+
+# macOS
+npm run tauri build -- --target x86_64-apple-darwin
+# or for Apple Silicon
+npm run tauri build -- --target aarch64-apple-darwin
+
+# Linux
+npm run tauri build -- --target x86_64-unknown-linux-gnu
 ```
 
-#### 3. Start Backend from Rust
+## Bundle Size
 
-**File: `src-tauri/src/main.rs`**
-```rust
-use tauri::Manager;
-use std::process::{Command, Stdio};
-use std::path::PathBuf;
+The application bundle includes:
+- Frontend React app (built with Vite)
+- Rust binary (Tauri runtime)
+- SQLite library (bundled with `rusqlite`)
+- Mermaid.js library
+- CodeMirror editor
 
-#[tauri::command]
-fn get_app_data_dir() -> Result<String, String> {
-    let app_data = tauri::api::path::app_data_dir(&tauri::Config::default())
-        .ok_or("Failed to get app data dir")?;
-    Ok(app_data.to_string_lossy().to_string())
-}
+No Node.js runtime or external dependencies are required!
 
-fn main() {
-    tauri::Builder::default()
-        .setup(|app| {
-            // Start backend server
-            let app_data_dir = tauri::api::path::app_data_dir(&app.config())
-                .ok_or("Failed to get app data dir")?;
-            
-            // Path to bundled backend
-            let backend_path = app.path_resolver()
-                .resource_dir()
-                .expect("Failed to get resource dir")
-                .join("backend");
-            
-            let backend_exe = if cfg!(windows) {
-                backend_path.join("node.exe")
-            } else {
-                backend_path.join("node")
-            };
-            
-            let backend_script = backend_path.join("dist").join("index.js");
-            
-            // Set DATABASE_PATH environment variable
-            std::env::set_var("DATABASE_PATH", 
-                app_data_dir.join("mermaid-ui.db").to_string_lossy().to_string());
-            
-            // Start backend process
-            let mut backend_process = Command::new(backend_exe)
-                .arg(backend_script)
-                .stdout(Stdio::inherit())
-                .stderr(Stdio::inherit())
-                .spawn()
-                .expect("Failed to start backend");
-            
-            // Store process handle
-            app.manage(backend_process);
-            
-            Ok(())
-        })
-        .invoke_handler(tauri::generate_handler![get_app_data_dir])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-}
-```
+## Packaging Considerations
 
-#### 4. Bundle Backend in Tauri Resources
+### Database Migration
 
-**File: `src-tauri/tauri.conf.json`**
-```json
-{
-  "tauri": {
-    "bundle": {
-      "resources": [
-        "../backend/dist/**",
-        "../backend/node_modules/**"
-      ]
-    }
-  }
-}
-```
+When users upgrade from an older version:
+- The database will automatically be created in the app data directory
+- Existing data from the old backend version won't be automatically migrated
+- Users will need to manually export/import if upgrading from the old Node.js backend version
 
-#### 5. Include Node.js Runtime
+### Permissions
 
-You'll need to bundle Node.js runtime with your app or use a tool like:
-- `pkg` (https://github.com/vercel/pkg) - Bundle Node.js apps
-- `nexe` (https://github.com/nexe/nexe) - Create executables
-- Or bundle Node.js binaries with your app
+The application requires:
+- **File system access**: To read/write the database in the app data directory
+- No network permissions needed (no HTTP server)
 
-### Option 2: Use Tauri IPC Instead (Better Approach)
+These permissions are configured in `src-tauri/tauri.conf.json`.
 
-Replace the Express backend with Tauri commands:
+### Testing Before Release
 
-1. **Move database logic to Rust** using `rusqlite` crate
-2. **Create Tauri commands** for each API endpoint
-3. **Update frontend** to call Tauri commands instead of HTTP
+Before packaging, ensure:
+1. ✅ Database creates successfully in app data directory
+2. ✅ Collections and diagrams CRUD operations work
+3. ✅ File upload works correctly
+4. ✅ Auto-save functionality works
+5. ✅ Application works when launched from the bundle (not just dev mode)
 
-This avoids bundling Node.js but requires rewriting backend logic.
+## Distribution
 
-### Option 3: Use Tauri Plugin System
+After building, you can distribute:
 
-Tauri v2 has better plugin support, but you're on v1.5. Consider:
-- Using Tauri's built-in capabilities
-- Creating custom Tauri commands for database operations
+- **Windows**: `.exe` installer or `.msi` package (configured in `tauri.conf.json`)
+- **macOS**: `.dmg` or `.app` bundle
+- **Linux**: `.deb`, `.rpm`, or `.AppImage` (depending on configuration)
 
-## Recommended Approach
+The installer/packaging format is configured in `src-tauri/tauri.conf.json` under the `bundle` section.
 
-For Tauri v1.5 with your current setup:
+## Troubleshooting
 
-1. **Short term**: Bundle backend with Node.js runtime
-2. **Long term**: Migrate to Tauri IPC commands (no Node.js needed)
+### Database Not Found
 
-## Testing
+If the database isn't being created:
+- Check that the app data directory exists (Tauri creates it automatically)
+- Verify file system permissions
+- Check console logs for database initialization errors
 
-Before packaging, test:
-1. Database creates in user data directory (not app directory)
-2. Backend starts automatically when app launches
-3. Frontend can connect to backend (check port availability)
-4. Exports work with bundled Puppeteer
+### Build Errors
 
-## Additional Considerations
+If you encounter build errors:
+- Ensure Rust toolchain is up to date: `rustup update`
+- Clear Tauri build cache: `rm -rf src-tauri/target`
+- Reinstall dependencies: `npm install`
 
-- **Puppeteer**: Requires Chromium bundled - large file size
-- **Port conflicts**: Check if port 3001 is available
-- **Permissions**: Ensure app has write access to user data directory
-- **Error handling**: Handle backend startup failures gracefully
+## Future Enhancements
 
+Potential improvements for future versions:
+- Database migration system for schema changes
+- Export functionality (if needed, can be implemented client-side or via Rust)
+- Plugin system for extending functionality

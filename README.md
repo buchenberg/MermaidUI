@@ -1,23 +1,24 @@
 # MermaidUI
 
-A desktop application built with Tauri for viewing, editing, and exporting Mermaid diagrams. The application features collections management, a split-pane editor with live preview, and export capabilities in multiple formats.
+A desktop application built with Tauri for viewing and editing Mermaid diagrams. The application features collections management, a split-pane editor with live preview, and auto-save functionality.
 
 ## Features
 
-- 📁 **Collections Management**: Organize diagrams into collections
-- 📝 **Text Editor**: Edit Mermaid diagram code with syntax highlighting
-- 👁️ **Live Preview**: Real-time preview of diagrams as you type
-- 📤 **Export**: Export diagrams as SVG, PNG, or PDF
-- 📥 **File Upload**: Upload existing `.mmd` or `.mermaid` files
-- 💾 **Auto-save**: Automatic saving of changes (with manual save option)
+- **Collections Management**: Organize diagrams into collections
+- **Text Editor**: Edit Mermaid diagram code with syntax highlighting using CodeMirror
+- **Live Preview**: Real-time preview of diagrams as you type
+- **File Upload**: Upload existing `.mmd` or `.mermaid` files
+- **Auto-save**: Optional automatic saving of content changes (with manual save option)
+- **Resizable Split Pane**: Adjustable editor/preview layout with hide/show functionality
 
 ## Tech Stack
 
 - **Frontend**: React + TypeScript + Vite
-- **Backend**: Node.js + Express + TypeScript
-- **Database**: SQLite
+- **Backend**: Rust (Tauri IPC)
+- **Database**: SQLite (via `rusqlite`)
 - **Desktop Framework**: Tauri
 - **Diagram Rendering**: Mermaid.js
+- **Editor**: CodeMirror 6
 
 ## Prerequisites
 
@@ -46,19 +47,14 @@ git clone <repository-url>
 cd MermaidUI
 ```
 
-2. Install frontend dependencies:
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Install backend dependencies:
-```bash
-cd backend
-npm install
-cd ..
-```
-
-4. Install Rust dependencies (Tauri will handle this automatically, but you can also install Rust via [rustup](https://rustup.rs/))
+3. Install Rust (if not already installed):
+   - Install via [rustup](https://rustup.rs/)
+   - Tauri will handle Rust dependencies automatically
 
 ## Development
 
@@ -69,22 +65,10 @@ npm run dev
 ```
 
 This will:
-- Start the backend server on `http://localhost:3001`
 - Start the frontend Vite dev server on `http://localhost:5173`
-- Launch the Tauri application
+- Launch the Tauri application (which connects to the dev server)
 
-Alternatively, you can run them separately:
-
-```bash
-# Terminal 1: Backend
-npm run dev:backend
-
-# Terminal 2: Frontend
-npm run dev:frontend
-
-# Terminal 3: Tauri
-npm run tauri dev
-```
+The application uses Tauri IPC for frontend-backend communication - no separate backend server is needed.
 
 ## Building
 
@@ -96,7 +80,6 @@ npm run build
 
 This will:
 - Build the frontend React app
-- Build the backend TypeScript code
 - Create the Tauri application bundle
 
 The built application will be in `src-tauri/target/release/` (or `debug` for debug builds).
@@ -107,46 +90,56 @@ The built application will be in `src-tauri/target/release/` (or `debug` for deb
 MermaidUI/
 ├── src/                    # Frontend React application
 │   ├── components/         # React components
+│   ├── api.ts              # Tauri IPC API wrapper
 │   ├── App.tsx             # Main app component
 │   └── main.tsx            # Entry point
-├── backend/                # Backend API server
-│   ├── src/
-│   │   ├── routes/         # API route handlers
-│   │   ├── database.ts     # SQLite database setup
-│   │   └── index.ts        # Express server
 ├── src-tauri/              # Tauri Rust code
 │   ├── src/
-│   │   └── main.rs         # Tauri entry point
-│   └── Cargo.toml          # Rust dependencies
+│   │   ├── main.rs         # Tauri entry point and commands
+│   │   └── database.rs     # SQLite database operations
+│   ├── Cargo.toml          # Rust dependencies
+│   └── tauri.conf.json     # Tauri configuration
 ├── package.json            # Frontend dependencies
 └── vite.config.ts          # Vite configuration
 ```
 
-## API Endpoints
+## Architecture
 
-### Collections
-- `GET /api/collections` - Get all collections
-- `GET /api/collections/:id` - Get a specific collection
-- `POST /api/collections` - Create a new collection
-- `PUT /api/collections/:id` - Update a collection
-- `DELETE /api/collections/:id` - Delete a collection
+The application uses **Tauri IPC** for communication between the frontend and backend:
 
-### Diagrams
-- `GET /api/diagrams/collection/:collectionId` - Get all diagrams in a collection
-- `GET /api/diagrams/:id` - Get a specific diagram
-- `POST /api/diagrams` - Create a new diagram
-- `PUT /api/diagrams/:id` - Update a diagram
-- `DELETE /api/diagrams/:id` - Delete a diagram
-- `POST /api/diagrams/upload` - Upload a Mermaid file
+- **Frontend** (`src/`): React + TypeScript application that uses `invoke()` to call Rust commands
+- **Backend** (`src-tauri/src/`): Rust code that handles database operations via Tauri commands
+- **Database**: SQLite database stored in the app data directory (works in packaged applications)
 
-### Export
-- `POST /api/export/svg/:id` - Export diagram as SVG
-- `POST /api/export/png/:id` - Export diagram as PNG
-- `POST /api/export/pdf/:id` - Export diagram as PDF
+### Tauri Commands
+
+The following Tauri commands are available:
+
+**Collections:**
+- `get_collections` - Get all collections
+- `get_collection` - Get a specific collection
+- `create_collection` - Create a new collection
+- `update_collection` - Update a collection
+- `delete_collection` - Delete a collection
+
+**Diagrams:**
+- `get_diagrams_by_collection` - Get all diagrams in a collection
+- `get_diagram` - Get a specific diagram
+- `create_diagram` - Create a new diagram
+- `update_diagram` - Update a diagram
+- `delete_diagram` - Delete a diagram
+
+Frontend code uses the `src/api.ts` module which provides a clean abstraction over these Tauri commands.
 
 ## Database
 
-The application uses SQLite for persistence. The database file (`mermaid-ui.db`) will be created automatically in the project root directory when you first run the application.
+The application uses SQLite for persistence. The database file (`mermaid-ui.db`) is automatically created in the app data directory when you first run the application:
+
+- **Windows**: `%APPDATA%\com.mermaidui.app\mermaid-ui.db`
+- **macOS**: `~/Library/Application Support/com.mermaidui.app/mermaid-ui.db`
+- **Linux**: `~/.local/share/com.mermaidui.app/mermaid-ui.db`
+
+A default collection is automatically created if none exists when the application starts.
 
 ## License
 

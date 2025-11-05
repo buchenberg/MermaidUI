@@ -3,7 +3,6 @@ import CodeMirror from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
 import DiagramPreview from './DiagramPreview';
-import ExportMenu from './ExportMenu';
 import ResizableSplit from './ResizableSplit';
 import { Diagram } from '../App';
 import './DiagramEditor.css';
@@ -110,12 +109,6 @@ export default function DiagramEditor({ diagram, onUpdate, onSave }: DiagramEdit
           <button className="btn-save" onClick={handleSave} disabled={!hasChanges}>
             Save
           </button>
-          <ExportMenu 
-            diagramId={diagram.id} 
-            diagramName={diagram.name}
-            hasUnsavedChanges={hasChanges}
-            onSaveBeforeExport={handleSave}
-          />
         </div>
       </div>
       <div className="editor-content">
