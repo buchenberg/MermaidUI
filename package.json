@@ -10,7 +10,8 @@
     "build:frontend": "vite build",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "version": "node scripts/version.js"
   },
   "dependencies": {
     "@tauri-apps/api": "^1.5.0",
