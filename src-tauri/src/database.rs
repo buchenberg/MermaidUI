@@ -140,10 +140,9 @@ impl Database {
     
     pub fn create_collection(&self, name: String, description: Option<String>) -> SqliteResult<Collection> {
         let conn = self.conn.lock().unwrap();
-        let desc_str = description.as_deref().unwrap_or("");
         conn.execute(
             "INSERT INTO collections (name, description, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
-            rusqlite::params![name, desc_str],
+            rusqlite::params![name, description],
         )?;
         
         let id = conn.last_insert_rowid();
@@ -153,10 +152,9 @@ impl Database {
     
     pub fn update_collection(&self, id: i64, name: String, description: Option<String>) -> SqliteResult<Collection> {
         let conn = self.conn.lock().unwrap();
-        let desc_str = description.as_deref().unwrap_or("");
         conn.execute(
             "UPDATE collections SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-            rusqlite::params![name, desc_str, id],
+            rusqlite::params![name, description, id],
         )?;
         
         Self::get_collection_internal(&conn, id)
