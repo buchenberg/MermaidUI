@@ -31,6 +31,9 @@
         "removeFile": true,
         "exists": true,
         "scope": ["$APPDATA/**", "$HOME/**", "$DOCUMENT/**", "$DESKTOP/**"]
+      },
+      "path": {
+        "all": true
       }
     },
     "bundle": {

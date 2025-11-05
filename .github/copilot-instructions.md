@@ -2,32 +2,27 @@
 
 ## Architecture Overview
 
-MermaidUI is a **Tauri desktop application** with a three-tier architecture:
+MermaidUI is a **Tauri desktop application** with a two-tier architecture:
 
-- **Frontend**: React + TypeScript + Vite (`src/`) - communicates with backend via REST API
-- **Backend**: Node.js + Express + TypeScript (`backend/src/`) - provides REST API and handles exports
-- **Database**: SQLite (`backend/mermaid-ui.db`) - stores collections and diagrams
-- **Tauri**: Rust wrapper (`src-tauri/`) - minimal Rust code, mostly configuration
+- **Frontend**: React + TypeScript + Vite (`src/`) - communicates with Rust backend via Tauri IPC
+- **Backend**: Rust (`src-tauri/src/`) - provides Tauri commands and database operations
+- **Database**: SQLite (`mermaid-ui.db` in app data directory) - stores collections and diagrams
+- **Tauri**: Rust wrapper (`src-tauri/`) - handles IPC commands and database access
 
-**Critical**: The backend must start **before** Tauri launches. Use `npm run dev` which uses `npm-run-all`'s `run-p` to run backend and delayed Tauri in parallel (Tauri waits 3 seconds). Frontend is handled by Tauri's `beforeDevCommand`.
+**Critical**: Use `npm run dev` which starts Tauri (which automatically starts the frontend dev server). Frontend is handled by Tauri's `beforeDevCommand`.
 
 ## Key Patterns
 
-### Backend Database Access
-- Use promise wrappers from `backend/src/database.ts`: `runQuery<T>()`, `runAll<T>()`, `run()`
-- Never call `sqlite3` directly - the wrappers handle callback-to-promise conversion
-- Database initializes on startup and creates default collection if none exists
+### Rust Database Access
+- Database operations are in `src-tauri/src/database.rs`
+- Uses `rusqlite` with bundled SQLite (no external dependencies)
+- Database stored in app data directory (works in packaged apps)
+- All CRUD operations implemented with proper mutex locking to prevent deadlocks
 
 ### Frontend-Backend Communication
-- API base URL hardcoded as `http://localhost:3001/api` in components
-- Frontend includes **retry logic** for backend connection (see `src/App.tsx` `fetchCollections()`)
-- Backend runs on port 3001, frontend dev server on 5173
-
-### Export System
-- **All exports use Puppeteer** - Mermaid needs DOM environment, can't render in Node.js directly
-- Export routes (`backend/src/routes/export.ts`) launch headless browser, inject Mermaid CDN, wait for render
-- **Always close browser** in finally blocks to prevent resource leaks
-- Tauri native file dialogs used for save (`@tauri-apps/api/dialog.save`, `@tauri-apps/api/fs.writeBinaryFile`)
+- Frontend uses `invoke()` from `@tauri-apps/api/tauri` to call Rust commands
+- API functions abstracted in `src/api.ts`
+- No HTTP server needed - direct IPC communication
 
 ### Component Structure
 - Co-located CSS: each component has matching `.css` file (e.g., `DiagramEditor.tsx` + `DiagramEditor.css`)
@@ -43,17 +38,15 @@ MermaidUI is a **Tauri desktop application** with a three-tier architecture:
 
 ### Starting Development
 ```bash
-npm run dev  # Uses npm-run-all to run backend and delayed Tauri in parallel
+npm run dev  # Starts Tauri, which automatically starts the frontend dev server
 ```
-
-The `dev` script uses `run-p` to run backend and `dev:tauri-delayed` in parallel. The delayed Tauri script waits 3 seconds before starting to give backend time to initialize.
 
 **Do NOT** run `dev:frontend` separately - Tauri's `beforeDevCommand` handles it. Running separately causes port conflicts.
 
-### Backend Startup
-- Backend must initialize database before accepting requests
-- Database file created at `process.cwd()/mermaid-ui.db` (configurable via `DATABASE_PATH` env var)
-- Server logs initialization status - check console for connection issues
+### Database Initialization
+- Database initialized automatically when Tauri app starts
+- Database file created in app data directory (e.g., `%APPDATA%\com.mermaidui.app\mermaid-ui.db` on Windows)
+- Default collection created automatically if none exists
 
 ### Tauri Configuration
 - Edit `src-tauri/tauri.conf.json` for window settings, permissions, bundle config
@@ -63,31 +56,29 @@ The `dev` script uses `run-p` to run backend and `dev:tauri-delayed` in parallel
 ## File Organization
 
 - **Frontend components**: `src/components/` - one component per file with matching CSS
-- **Backend routes**: `backend/src/routes/` - Express routers (collections, diagrams, export)
-- **Database**: `backend/src/database.ts` - SQLite setup and query helpers
-- **Tauri**: `src-tauri/` - minimal Rust (`src/main.rs`), config (`tauri.conf.json`, `Cargo.toml`)
+- **Frontend API**: `src/api.ts` - Tauri IPC wrapper functions
+- **Database**: `src-tauri/src/database.rs` - SQLite operations using rusqlite
+- **Tauri commands**: `src-tauri/src/main.rs` - Tauri IPC command handlers
+- **Tauri config**: `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`
 
 ## Common Tasks
 
-### Adding a New API Endpoint
-1. Create route in `backend/src/routes/` or add to existing router
-2. Use `runQuery`, `runAll`, or `run` from `database.ts` for DB access
-3. Register route in `backend/src/index.ts` with `app.use()`
-4. Frontend: call via `fetch()` to `http://localhost:3001/api/...`
+### Adding a New Tauri Command
+1. Add a method to `Database` struct in `src-tauri/src/database.rs` (if database operation needed)
+2. Create a `#[tauri::command]` function in `src-tauri/src/main.rs`
+3. Register command in `invoke_handler` in `main()`
+4. Add frontend function in `src/api.ts` using `invoke()`
+5. Update components to use the new API function
 
 ### Adding a New Component
 1. Create `ComponentName.tsx` and `ComponentName.css` in `src/components/`
 2. Import types from `src/App.tsx` if needed
 3. Follow prop pattern: parent manages state, passes handlers as props
 
-### Modifying Export Formats
-- Export routes in `backend/src/routes/export.ts` follow same pattern:
-  1. Fetch diagram from DB
-  2. Launch Puppeteer browser
-  3. Inject HTML with Mermaid CDN
-  4. Wait for `.mermaid svg` selector
-  5. Extract/screenshot/generate PDF
-  6. Close browser in finally block
+### Database Mutex Locking
+- Always lock the mutex once per operation
+- Use internal helper methods (`get_collection_internal`, `get_diagram_internal`) to avoid deadlocks
+- Never call public methods that lock from within another locked method
 
 ### Tauri Native Features
 - File dialogs: `@tauri-apps/api/dialog.save` (requires `dialog-save` feature in Cargo.toml)
@@ -97,14 +88,15 @@ The `dev` script uses `run-p` to run backend and `dev:tauri-delayed` in parallel
 
 ## Error Handling Patterns
 
-- Backend: Return `{ error: string, details?: string }` JSON on errors
+- Rust commands: Return `Result<T, String>` - errors converted to strings for IPC
 - Frontend: Show alerts for user-facing errors, console.error for debugging
-- Export: Always cleanup Puppeteer browser instances (try/finally pattern)
-- Database: Errors propagate through promise wrappers, catch at route level
+- Database: Errors propagate through `SqliteResult` and converted to strings in commands
+- Always handle errors in try/catch blocks when calling API functions
 
 ## Type Safety
 
-- Shared types: `Collection` and `Diagram` interfaces defined in both `src/App.tsx` and `backend/src/database.ts`
+- Shared types: `Collection` and `Diagram` interfaces defined in `src/api.ts` (frontend) and `src-tauri/src/database.rs` (Rust)
+- Rust structs use `Serialize`/`Deserialize` for IPC serialization
 - Keep types in sync manually (no shared types package currently)
-- Components import types from `src/App.tsx`, backend imports from `database.ts`
+- Components import types from `src/api.ts` or `src/App.tsx`
 

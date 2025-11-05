@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Collection, Diagram } from '../App';
+import * as api from '../api';
 import ConfirmModal from './ConfirmModal';
 import './CollectionsBrowser.css';
-
-const API_BASE = 'http://localhost:3001/api';
 
 interface CollectionsBrowserProps {
   collections: Collection[];
@@ -55,8 +54,7 @@ export default function CollectionsBrowser({
 
   const fetchDiagrams = async (collectionId: number) => {
     try {
-      const response = await fetch(`${API_BASE}/diagrams/collection/${collectionId}`);
-      const data = await response.json();
+      const data = await api.getDiagramsByCollection(collectionId);
       setDiagrams(data);
     } catch (error) {
       console.error('Failed to fetch diagrams:', error);
@@ -74,22 +72,12 @@ export default function CollectionsBrowser({
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('collection_id', selectedCollection.id.toString());
-
-      const response = await fetch(`${API_BASE}/diagrams/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const newDiagram = await response.json();
-        await fetchDiagrams(selectedCollection.id);
-        onDiagramSelect(newDiagram);
-      } else {
-        alert('Failed to upload file');
-      }
+      const content = await file.text();
+      const name = file.name.replace(/\.(mmd|mermaid)$/i, '');
+      
+      const newDiagram = await api.createDiagram(selectedCollection.id, name, content);
+      await fetchDiagrams(selectedCollection.id);
+      onDiagramSelect(newDiagram);
     } catch (error) {
       console.error('Upload error:', error);
       alert('Failed to upload file');
