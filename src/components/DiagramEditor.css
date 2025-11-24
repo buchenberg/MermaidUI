@@ -2,15 +2,17 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
 }
 
-.editor-header {
+.editor-pane .editor-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
     border-bottom: 1px solid #e0e0e0;
     background: white;
+    flex-shrink: 0;
 }
 
 .diagram-name-input {
@@ -87,6 +89,26 @@
     background: #1e1e1e;
 }
 
+.editor-content-inner {
+    flex: 1;
+    overflow: hidden;
+}
+
+.editor-pane .cm-editor {
+    height: 100%;
+}
+
+.editor-pane .cm-scroller {
+    overflow: auto;
+}
+
+.editor-pane {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #1e1e1e;
+}
+
 .editor-pane .cm-editor {
     height: 100%;
 }
@@ -102,10 +124,20 @@
     background: white;
 }
 
+.preview-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+    background: #f8f9fa;
+    flex-shrink: 0;
+}
+
 .preview-content {
     flex: 1;
     overflow: hidden;
-    padding: 0;
+    padding: 2rem;
     display: flex;
     align-items: flex-start;
     justify-content: center;

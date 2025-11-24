@@ -114,57 +114,61 @@ export default function DiagramEditor({
 
   return (
     <div className="diagram-editor">
-      <div className="editor-header">
-        <input
-          type="text"
-          className="diagram-name-input"
-          value={name}
-          onChange={(e) => handleNameChange(e.target.value)}
-          placeholder="Diagram name"
-        />
-        <div className="header-actions">
-          <ZoomControls
-            zoomLevel={zoomLevel}
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onResetZoom={handleResetZoom}
-          />
-          <label className="auto-save-toggle">
-            <input
-              type="checkbox"
-              checked={autoSaveEnabled}
-              onChange={(e) => handleAutoSaveToggle(e.target.checked)}
-            />
-            <span>Auto-save</span>
-          </label>
-          {hasChanges && (
-            <span className="unsaved-indicator">Unsaved changes</span>
-          )}
-          <button
-            className="btn-save"
-            onClick={handleSave}
-            disabled={!hasChanges}
-          >
-            Save
-          </button>
-        </div>
-      </div>
       <div className="editor-content">
         <ResizableSplit
           left={
             <div className="editor-pane">
-              <CodeMirror
-                value={content}
-                height="100%"
-                extensions={[markdown()]}
-                theme={oneDark}
-                onChange={(value) => handleContentChange(value)}
-                placeholder="Enter your Mermaid diagram code here..."
-              />
+              <div className="editor-header">
+                <input
+                  type="text"
+                  className="diagram-name-input"
+                  value={name}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  placeholder="Diagram name"
+                />
+                <div className="header-actions">
+                  <label className="auto-save-toggle">
+                    <input
+                      type="checkbox"
+                      checked={autoSaveEnabled}
+                      onChange={(e) => handleAutoSaveToggle(e.target.checked)}
+                    />
+                    <span>Auto-save</span>
+                  </label>
+                  {hasChanges && (
+                    <span className="unsaved-indicator">Unsaved changes</span>
+                  )}
+                  <button
+                    className="btn-save"
+                    onClick={handleSave}
+                    disabled={!hasChanges}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+              <div className="editor-content-inner">
+                <CodeMirror
+                  value={content}
+                  height="100%"
+                  extensions={[markdown()]}
+                  theme={oneDark}
+                  onChange={(value) => handleContentChange(value)}
+                  placeholder="Enter your Mermaid diagram code here..."
+                />
+              </div>
             </div>
           }
           right={
             <div className="preview-pane">
+              <div className="preview-header">
+                <ZoomControls
+                  zoomLevel={zoomLevel}
+                  onZoomIn={handleZoomIn}
+                  onZoomOut={handleZoomOut}
+                  onResetZoom={handleResetZoom}
+                />
+              </div>
               <div className="preview-content">
                 <DiagramPreview content={content} zoomLevel={zoomLevel} />
               </div>
