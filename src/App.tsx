@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
-import CollectionsBrowser from './components/CollectionsBrowser';
-import DiagramEditor from './components/DiagramEditor';
-import * as api from './api';
-import type { Collection, Diagram } from './api';
-import './App.css';
+import { useState, useEffect } from "react";
+import CollectionsBrowser from "./components/CollectionsBrowser";
+import DiagramEditor from "./components/DiagramEditor";
+import * as api from "./api";
+import type { Collection, Diagram } from "./api";
+import "./App.css";
 
 // Re-export types for components that import from App.tsx
 export type { Collection, Diagram };
 
 function App() {
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+  const [selectedCollection, setSelectedCollection] =
+    useState<Collection | null>(null);
   const [selectedDiagram, setSelectedDiagram] = useState<Diagram | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     fetchCollections();
@@ -25,7 +27,7 @@ function App() {
         setSelectedCollection(data[0]);
       }
     } catch (error) {
-      console.error('Failed to fetch collections:', error);
+      console.error("Failed to fetch collections:", error);
     }
   };
 
@@ -38,24 +40,32 @@ function App() {
     setSelectedDiagram(diagram);
   };
 
-  const handleDiagramCreate = async (collectionId: number, name: string, content: string) => {
+  const handleDiagramCreate = async (
+    collectionId: number,
+    name: string,
+    content: string,
+  ) => {
     try {
       const newDiagram = await api.createDiagram(collectionId, name, content);
       setSelectedDiagram(newDiagram);
       return newDiagram;
     } catch (error) {
-      console.error('Failed to create diagram:', error);
+      console.error("Failed to create diagram:", error);
       throw error;
     }
   };
 
-  const handleDiagramUpdate = async (diagramId: number, name: string, content: string) => {
+  const handleDiagramUpdate = async (
+    diagramId: number,
+    name: string,
+    content: string,
+  ) => {
     try {
       const updatedDiagram = await api.updateDiagram(diagramId, name, content);
       setSelectedDiagram(updatedDiagram);
       return updatedDiagram;
     } catch (error) {
-      console.error('Failed to update diagram:', error);
+      console.error("Failed to update diagram:", error);
       throw error;
     }
   };
@@ -67,7 +77,7 @@ function App() {
       setSelectedCollection(newCollection);
       return newCollection;
     } catch (error) {
-      console.error('Failed to create collection:', error);
+      console.error("Failed to create collection:", error);
       throw error;
     }
   };
@@ -76,18 +86,22 @@ function App() {
     try {
       const success = await api.deleteCollection(collectionId);
       if (success) {
-        const updatedCollections = collections.filter(c => c.id !== collectionId);
+        const updatedCollections = collections.filter(
+          (c) => c.id !== collectionId,
+        );
         setCollections(updatedCollections);
         if (selectedCollection?.id === collectionId) {
-          setSelectedCollection(updatedCollections.length > 0 ? updatedCollections[0] : null);
+          setSelectedCollection(
+            updatedCollections.length > 0 ? updatedCollections[0] : null,
+          );
           setSelectedDiagram(null);
         }
       } else {
-        alert('Failed to delete collection');
+        alert("Failed to delete collection");
       }
     } catch (error) {
-      console.error('Failed to delete collection:', error);
-      alert('Failed to delete collection');
+      console.error("Failed to delete collection:", error);
+      alert("Failed to delete collection");
     }
   };
 
@@ -99,28 +113,37 @@ function App() {
           setSelectedDiagram(null);
         }
       } else {
-        alert('Failed to delete diagram');
+        alert("Failed to delete diagram");
       }
     } catch (error) {
-      console.error('Failed to delete diagram:', error);
-      alert('Failed to delete diagram');
+      console.error("Failed to delete diagram:", error);
+      alert("Failed to delete diagram");
     }
   };
 
   return (
     <div className="app">
-      <div className="sidebar">
-        <CollectionsBrowser
-          collections={collections}
-          selectedCollection={selectedCollection}
-          onCollectionSelect={handleCollectionSelect}
-          onCollectionCreate={handleCollectionCreate}
-          onCollectionDelete={handleCollectionDelete}
-          selectedDiagram={selectedDiagram}
-          onDiagramSelect={handleDiagramSelect}
-          onDiagramCreate={handleDiagramCreate}
-          onDiagramDelete={handleDiagramDelete}
-        />
+      <div className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <button
+          className="sidebar-toggle"
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? "▶" : "◀"}
+        </button>
+        <div className={sidebarCollapsed ? "collections-browser-hidden" : ""}>
+          <CollectionsBrowser
+            collections={collections}
+            selectedCollection={selectedCollection}
+            onCollectionSelect={handleCollectionSelect}
+            onCollectionCreate={handleCollectionCreate}
+            onCollectionDelete={handleCollectionDelete}
+            selectedDiagram={selectedDiagram}
+            onDiagramSelect={handleDiagramSelect}
+            onDiagramCreate={handleDiagramCreate}
+            onDiagramDelete={handleDiagramDelete}
+          />
+        </div>
       </div>
       <div className="main-content">
         {selectedDiagram ? (
@@ -132,7 +155,10 @@ function App() {
         ) : (
           <div className="welcome">
             <h1>Welcome to MermaidUI</h1>
-            <p>Select a collection from the sidebar to view diagrams, or create a new diagram.</p>
+            <p>
+              Select a collection from the sidebar to view diagrams, or create a
+              new diagram.
+            </p>
           </div>
         )}
       </div>
@@ -141,4 +167,3 @@ function App() {
 }
 
 export default App;
-
