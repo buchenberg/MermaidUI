@@ -11,10 +11,11 @@
     -ms-user-select: none;
     padding: 2rem;
     box-sizing: border-box;
+    min-height: 0; /* Enable flex child scrolling */
 }
 
 .mermaid-preview svg {
-    max-width: 100%;
+    max-width: none;
     height: auto;
     user-select: none;
     -webkit-user-select: none;

@@ -146,23 +146,13 @@ function applyZoomToPreview(container: HTMLDivElement, zoomLevel: number) {
     svg.style.transformOrigin = "0 0";
     svg.style.transition = "transform 0.2s ease";
 
-    // Reset container sizing to let CSS handle scrolling
+    // Clear any previous container sizing to allow natural scrolling
     container.style.width = "";
     container.style.height = "";
     container.style.minWidth = "";
     container.style.minHeight = "";
 
-    // Update container size to accommodate zoomed content
-    const originalWidth = svg.getAttribute("width");
-    const originalHeight = svg.getAttribute("height");
-
-    if (originalWidth && originalHeight) {
-      const scaledWidth = parseFloat(originalWidth) * zoomLevel;
-      const scaledHeight = parseFloat(originalHeight) * zoomLevel;
-
-      // Only set min dimensions to allow natural scrolling
-      container.style.minWidth = `${scaledWidth}px`;
-      container.style.minHeight = `${scaledHeight}px`;
-    }
+    // For large diagrams, let the natural scroll behavior work
+    // The container will scroll naturally without explicit sizing
   }
 }
