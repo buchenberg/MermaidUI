@@ -1,11 +1,12 @@
-import React from 'react';
-import './ZoomControls.css';
+import React from "react";
+import "./ZoomControls.css";
 
 interface ZoomControlsProps {
   zoomLevel: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetZoom: () => void;
+  onExportSvg?: () => void;
   minZoom?: number;
   maxZoom?: number;
   step?: number;
@@ -16,9 +17,10 @@ export default function ZoomControls({
   onZoomIn,
   onZoomOut,
   onResetZoom,
+  onExportSvg,
   minZoom = 0.3,
   maxZoom = 3.0,
-  step = 0.1
+  step = 0.1,
 }: ZoomControlsProps) {
   const zoomPercentage = Math.round(zoomLevel * 100);
   const canZoomIn = zoomLevel < maxZoom;
@@ -58,6 +60,17 @@ export default function ZoomControls({
       >
         100%
       </button>
+
+      {onExportSvg && (
+        <button
+          className="zoom-btn zoom-export"
+          onClick={onExportSvg}
+          title="Export as SVG"
+          aria-label="Export as SVG"
+        >
+          💾
+        </button>
+      )}
     </div>
   );
 }

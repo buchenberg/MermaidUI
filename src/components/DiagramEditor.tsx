@@ -14,6 +14,10 @@ interface DiagramEditorProps {
   onSave: (id: number, name: string, content: string) => Promise<Diagram>;
 }
 
+interface ExportOptions {
+  format: "svg";
+}
+
 export default function DiagramEditor({
   diagram,
   onUpdate,
@@ -24,6 +28,7 @@ export default function DiagramEditor({
   const [hasChanges, setHasChanges] = useState(false);
   const [hasNameChanges, setHasNameChanges] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1.0);
+  const previewRef = useRef<HTMLDivElement>(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     // Load auto-save preference from localStorage, default to false
     const saved = localStorage.getItem("mermaid-ui-auto-save");
@@ -49,6 +54,40 @@ export default function DiagramEditor({
 
   const handleResetZoom = () => {
     setZoomLevel(1.0);
+  };
+
+  const handleExportSvg = async () => {
+    if (!previewRef.current) return;
+
+    try {
+      // Find the SVG element in the preview
+      const svgElement = previewRef.current.querySelector("svg");
+      if (!svgElement) {
+        alert("No diagram to export");
+        return;
+      }
+
+      // Get the SVG source
+      const svgSource = new XMLSerializer().serializeToString(svgElement);
+
+      // Create a blob with the SVG content
+      const blob = new Blob([svgSource], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+
+      // Create download link
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${name || "diagram"}.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up URL
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export diagram as SVG");
+    }
   };
 
   const handleContentChange = (newContent: string) => {
@@ -167,10 +206,15 @@ export default function DiagramEditor({
                   onZoomIn={handleZoomIn}
                   onZoomOut={handleZoomOut}
                   onResetZoom={handleResetZoom}
+                  onExportSvg={handleExportSvg}
                 />
               </div>
               <div className="preview-content">
-                <DiagramPreview content={content} zoomLevel={zoomLevel} />
+                <DiagramPreview
+                  content={content}
+                  zoomLevel={zoomLevel}
+                  ref={previewRef}
+                />
               </div>
             </div>
           }
