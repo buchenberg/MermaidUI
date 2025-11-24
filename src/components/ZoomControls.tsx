@@ -7,6 +7,7 @@ interface ZoomControlsProps {
   onZoomOut: () => void;
   onResetZoom: () => void;
   onExportSvg?: () => void;
+  onExportMmd?: () => void;
   minZoom?: number;
   maxZoom?: number;
   step?: number;
@@ -18,6 +19,7 @@ export default function ZoomControls({
   onZoomOut,
   onResetZoom,
   onExportSvg,
+  onExportMmd,
   minZoom = 0.3,
   maxZoom = 3.0,
   step = 0.1,
@@ -68,7 +70,17 @@ export default function ZoomControls({
           title="Export as SVG"
           aria-label="Export as SVG"
         >
-          💾
+          ⬇️
+        </button>
+      )}
+      {onExportMmd && (
+        <button
+          className="zoom-btn zoom-export"
+          onClick={onExportMmd}
+          title="Export Mermaid Source"
+          aria-label="Export Mermaid Source"
+        >
+          📝
         </button>
       )}
     </div>

@@ -87,6 +87,24 @@ export default function DiagramEditor({
     }
   };
 
+  const handleExportMmd = async () => {
+    try {
+      // Use Tauri file dialog to choose save location for Mermaid source
+      const success = await api.exportMermaidSource(
+        content,
+        `${name || "diagram"}.mmd`,
+      );
+
+      if (success) {
+        // Optional: Show success message
+        console.log("Mermaid source exported successfully");
+      }
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export Mermaid source");
+    }
+  };
+
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
     setHasChanges(true);
@@ -204,6 +222,7 @@ export default function DiagramEditor({
                   onZoomOut={handleZoomOut}
                   onResetZoom={handleResetZoom}
                   onExportSvg={handleExportSvg}
+                  onExportMmd={handleExportMmd}
                 />
               </div>
               <div className="preview-content">

@@ -115,3 +115,34 @@ export async function exportSvg(
     throw error;
   }
 }
+
+// Mermaid Source Export API
+export async function exportMermaidSource(
+  mermaidContent: string,
+  defaultName: string,
+): Promise<boolean> {
+  try {
+    // Show save dialog
+    const filePath = await save({
+      defaultPath: defaultName,
+      filters: [
+        {
+          name: "Mermaid Files",
+          extensions: ["mmd"],
+        },
+      ],
+    });
+
+    if (!filePath) {
+      // User cancelled the dialog
+      return false;
+    }
+
+    // Write the Mermaid source content to the selected file
+    await writeTextFile(filePath, mermaidContent);
+    return true;
+  } catch (error) {
+    console.error("Export failed:", error);
+    throw error;
+  }
+}
