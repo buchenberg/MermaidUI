@@ -6,6 +6,7 @@ import DiagramPreview from "./DiagramPreview";
 import ResizableSplit from "./ResizableSplit";
 import ZoomControls from "./ZoomControls";
 import { Diagram } from "../App";
+import * as api from "../api";
 import "./DiagramEditor.css";
 
 interface DiagramEditorProps {
@@ -70,20 +71,16 @@ export default function DiagramEditor({
       // Get the SVG source
       const svgSource = new XMLSerializer().serializeToString(svgElement);
 
-      // Create a blob with the SVG content
-      const blob = new Blob([svgSource], { type: "image/svg+xml" });
-      const url = URL.createObjectURL(blob);
+      // Use Tauri file dialog to choose save location
+      const success = await api.exportSvg(
+        svgSource,
+        `${name || "diagram"}.svg`,
+      );
 
-      // Create download link
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${name || "diagram"}.svg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up URL
-      URL.revokeObjectURL(url);
+      if (success) {
+        // Optional: Show success message
+        console.log("SVG exported successfully");
+      }
     } catch (error) {
       console.error("Export failed:", error);
       alert("Failed to export diagram as SVG");
