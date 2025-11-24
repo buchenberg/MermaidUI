@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-01-XX
+
+### Added
+- **Zoom controls**: Added zoom in/out, reset, and zoom level display for diagram preview
+- **Click-and-drag scrolling**: Pan around zoomed diagrams by clicking and dragging
+- **SVG export**: Export rendered diagrams as SVG files with file dialog for save location
+- **Mermaid source export**: Export Mermaid source code as .mmd files
+- **Separated headers**: Editor and preview panes now have dedicated header controls
+
+### Fixed
+- **State preservation**: CollectionsBrowser no longer loses state when sidebar collapses
+- **Scrolling behavior**: Large diagrams now properly show scrollbars and maintain padding
+- **Layout improvements**: Better responsive design for full-screen diagram viewing
+
+### Changed
+- **Export icons**: Updated from save icon to download icons for better user experience
+- **Control layout**: Zoom controls moved to preview header, editor controls to editor header
+
 ## [1.1.0] - 2025-01-XX
 
 ### Fixed
@@ -30,7 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tauri IPC backend with Rust database operations
 - SQLite database persistence in app data directory
 
-[Unreleased]: https://github.com/buchenberg/MermaidUI/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/buchenberg/MermaidUI/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/buchenberg/MermaidUI/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/buchenberg/MermaidUI/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/buchenberg/MermaidUI/releases/tag/v1.0.0
 
