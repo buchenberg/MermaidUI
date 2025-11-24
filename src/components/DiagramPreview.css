@@ -8,6 +8,8 @@
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    padding: 2rem;
+    box-sizing: border-box;
 }
 
 .mermaid-preview svg {
@@ -25,6 +27,8 @@
     justify-content: center;
     height: 100%;
     color: #999;
+    padding: 2rem;
+    box-sizing: border-box;
 }
 
 .error-message {
