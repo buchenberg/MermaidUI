@@ -131,7 +131,7 @@ function App() {
         >
           {sidebarCollapsed ? "▶" : "◀"}
         </button>
-        {!sidebarCollapsed && (
+        <div className={sidebarCollapsed ? "collections-browser-hidden" : ""}>
           <CollectionsBrowser
             collections={collections}
             selectedCollection={selectedCollection}
@@ -143,7 +143,7 @@ function App() {
             onDiagramCreate={handleDiagramCreate}
             onDiagramDelete={handleDiagramDelete}
           />
-        )}
+        </div>
       </div>
       <div className="main-content">
         {selectedDiagram ? (
