@@ -137,7 +137,7 @@
 
 .preview-content {
     flex: 1;
-    overflow: hidden;
+    overflow: auto;
     padding: 2rem;
     display: flex;
     align-items: flex-start;
