@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import CodeMirror from '@uiw/react-codemirror';
-import { markdown } from '@codemirror/lang-markdown';
-import { oneDark } from '@codemirror/theme-one-dark';
-import DiagramPreview from './DiagramPreview';
-import ResizableSplit from './ResizableSplit';
-import { Diagram } from '../App';
-import './DiagramEditor.css';
+import { useState, useEffect, useRef } from "react";
+import CodeMirror from "@uiw/react-codemirror";
+import { markdown } from "@codemirror/lang-markdown";
+import { oneDark } from "@codemirror/theme-one-dark";
+import DiagramPreview from "./DiagramPreview";
+import ResizableSplit from "./ResizableSplit";
+import ZoomControls from "./ZoomControls";
+import { Diagram } from "../App";
+import "./DiagramEditor.css";
 
 interface DiagramEditorProps {
   diagram: Diagram;
@@ -13,15 +14,20 @@ interface DiagramEditorProps {
   onSave: (id: number, name: string, content: string) => Promise<Diagram>;
 }
 
-export default function DiagramEditor({ diagram, onUpdate, onSave }: DiagramEditorProps) {
+export default function DiagramEditor({
+  diagram,
+  onUpdate,
+  onSave,
+}: DiagramEditorProps) {
   const [name, setName] = useState(diagram.name);
   const [content, setContent] = useState(diagram.content);
   const [hasChanges, setHasChanges] = useState(false);
   const [hasNameChanges, setHasNameChanges] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1.0);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(() => {
     // Load auto-save preference from localStorage, default to false
-    const saved = localStorage.getItem('mermaid-ui-auto-save');
-    return saved ? saved === 'true' : false;
+    const saved = localStorage.getItem("mermaid-ui-auto-save");
+    return saved ? saved === "true" : false;
   });
   const editorRef = useRef<{ editor: any } | null>(null);
 
@@ -31,6 +37,19 @@ export default function DiagramEditor({ diagram, onUpdate, onSave }: DiagramEdit
     setHasChanges(false);
     setHasNameChanges(false);
   }, [diagram.id]);
+
+  // Zoom control handlers
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(prev + 0.1, 3.0));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(prev - 0.1, 0.3));
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1.0);
+  };
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
@@ -49,13 +68,13 @@ export default function DiagramEditor({ diagram, onUpdate, onSave }: DiagramEdit
       setHasChanges(false);
       setHasNameChanges(false);
     } catch (error) {
-      alert('Failed to save diagram');
+      alert("Failed to save diagram");
     }
   };
 
   const handleAutoSaveToggle = (enabled: boolean) => {
     setAutoSaveEnabled(enabled);
-    localStorage.setItem('mermaid-ui-auto-save', enabled.toString());
+    localStorage.setItem("mermaid-ui-auto-save", enabled.toString());
   };
 
   const handleAutoSave = async () => {
@@ -68,7 +87,7 @@ export default function DiagramEditor({ diagram, onUpdate, onSave }: DiagramEdit
         setHasChanges(false);
       }
     } catch (error) {
-      console.error('Auto-save failed:', error);
+      console.error("Auto-save failed:", error);
     }
   };
 
@@ -79,12 +98,19 @@ export default function DiagramEditor({ diagram, onUpdate, onSave }: DiagramEdit
     // Only auto-save if content has changed (not just name)
     const contentChanged = content !== diagram.content;
     if (!contentChanged) return;
-    
+
     const timer = setTimeout(() => {
       handleAutoSave();
     }, 2000);
     return () => clearTimeout(timer);
-  }, [content, hasChanges, autoSaveEnabled, diagram.id, diagram.name, diagram.content]);
+  }, [
+    content,
+    hasChanges,
+    autoSaveEnabled,
+    diagram.id,
+    diagram.name,
+    diagram.content,
+  ]);
 
   return (
     <div className="diagram-editor">
@@ -105,8 +131,14 @@ export default function DiagramEditor({ diagram, onUpdate, onSave }: DiagramEdit
             />
             <span>Auto-save</span>
           </label>
-          {hasChanges && <span className="unsaved-indicator">Unsaved changes</span>}
-          <button className="btn-save" onClick={handleSave} disabled={!hasChanges}>
+          {hasChanges && (
+            <span className="unsaved-indicator">Unsaved changes</span>
+          )}
+          <button
+            className="btn-save"
+            onClick={handleSave}
+            disabled={!hasChanges}
+          >
             Save
           </button>
         </div>
@@ -127,7 +159,17 @@ export default function DiagramEditor({ diagram, onUpdate, onSave }: DiagramEdit
           }
           right={
             <div className="preview-pane">
-              <DiagramPreview content={content} />
+              <div className="preview-header">
+                <ZoomControls
+                  zoomLevel={zoomLevel}
+                  onZoomIn={handleZoomIn}
+                  onZoomOut={handleZoomOut}
+                  onResetZoom={handleResetZoom}
+                />
+              </div>
+              <div className="preview-content">
+                <DiagramPreview content={content} zoomLevel={zoomLevel} />
+              </div>
             </div>
           }
           initialLeftWidth={50}

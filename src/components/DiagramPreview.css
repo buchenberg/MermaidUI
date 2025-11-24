@@ -1,38 +1,37 @@
 .mermaid-preview {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .mermaid-preview svg {
-  max-width: 100%;
-  height: auto;
+    max-width: 100%;
+    height: auto;
 }
 
 .preview-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
 }
 
 .error-message {
-  padding: 1rem;
-  background: #fee;
-  border: 1px solid #fcc;
-  border-radius: 4px;
-  color: #c33;
+    padding: 1rem;
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 4px;
+    color: #c33;
 }
 
 .error-message h3 {
-  margin: 0 0 0.5rem 0;
+    margin: 0 0 0.5rem 0;
 }
 
 .error-message pre {
-  margin: 0;
-  font-size: 0.875rem;
-  overflow-x: auto;
+    margin: 0;
+    font-size: 0.875rem;
+    overflow-x: auto;
 }
-
