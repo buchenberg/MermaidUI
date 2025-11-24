@@ -3,11 +3,20 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .mermaid-preview svg {
     max-width: 100%;
     height: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .preview-empty {

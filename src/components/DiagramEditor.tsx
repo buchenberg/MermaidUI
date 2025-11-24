@@ -123,6 +123,12 @@ export default function DiagramEditor({
           placeholder="Diagram name"
         />
         <div className="header-actions">
+          <ZoomControls
+            zoomLevel={zoomLevel}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onResetZoom={handleResetZoom}
+          />
           <label className="auto-save-toggle">
             <input
               type="checkbox"
@@ -159,14 +165,6 @@ export default function DiagramEditor({
           }
           right={
             <div className="preview-pane">
-              <div className="preview-header">
-                <ZoomControls
-                  zoomLevel={zoomLevel}
-                  onZoomIn={handleZoomIn}
-                  onZoomOut={handleZoomOut}
-                  onResetZoom={handleResetZoom}
-                />
-              </div>
               <div className="preview-content">
                 <DiagramPreview content={content} zoomLevel={zoomLevel} />
               </div>

@@ -21,12 +21,14 @@
     font-size: 1rem;
     font-weight: 500;
     margin-right: 1rem;
+    max-width: 300px;
 }
 
 .header-actions {
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .auto-save-toggle {
@@ -100,19 +102,10 @@
     background: white;
 }
 
-.preview-header {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid #e0e0e0;
-    background: #f8f9fa;
-}
-
 .preview-content {
     flex: 1;
-    overflow: auto;
-    padding: 2rem;
+    overflow: hidden;
+    padding: 0;
     display: flex;
     align-items: flex-start;
     justify-content: center;

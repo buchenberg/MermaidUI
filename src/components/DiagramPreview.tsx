@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import mermaid from "mermaid";
 import "./DiagramPreview.css";
 
@@ -12,6 +12,11 @@ export default function DiagramPreview({
   zoomLevel = 1.0,
 }: DiagramPreviewProps) {
   const previewRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startY, setStartY] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
 
   useEffect(() => {
     if (!previewRef.current || !content.trim()) return;
@@ -62,7 +67,73 @@ export default function DiagramPreview({
     }
   }, [zoomLevel]);
 
-  return <div ref={previewRef} className="mermaid-preview" />;
+  // Mouse event handlers for drag scrolling
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!previewRef.current) return;
+
+    setIsDragging(true);
+    setStartX(e.pageX - previewRef.current.offsetLeft);
+    setStartY(e.pageY - previewRef.current.offsetTop);
+    setScrollLeft(previewRef.current.scrollLeft);
+    setScrollTop(previewRef.current.scrollTop);
+
+    // Prevent text selection while dragging
+    e.preventDefault();
+  }, []);
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !previewRef.current) return;
+
+      const x = e.pageX - previewRef.current.offsetLeft;
+      const y = e.pageY - previewRef.current.offsetTop;
+      const walkX = (x - startX) * 2; // Multiply for faster scrolling
+      const walkY = (y - startY) * 2;
+
+      previewRef.current.scrollLeft = scrollLeft - walkX;
+      previewRef.current.scrollTop = scrollTop - walkY;
+    },
+    [isDragging, startX, startY, scrollLeft, scrollTop],
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Add/remove global mouse event listeners
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+
+      // Change cursor to grabbing
+      if (previewRef.current) {
+        previewRef.current.style.cursor = "grabbing";
+      }
+    } else {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+
+      // Reset cursor
+      if (previewRef.current) {
+        previewRef.current.style.cursor = "grab";
+      }
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  return (
+    <div
+      ref={previewRef}
+      className="mermaid-preview"
+      onMouseDown={handleMouseDown}
+      style={{ cursor: isDragging ? "grabbing" : "grab" }}
+    />
+  );
 }
 
 // Helper function to apply zoom transform to the preview container
