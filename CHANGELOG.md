@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-01-XX
+
+### Added
+- **Monaco Editor**: Replaced CodeMirror with Monaco Editor (VS Code's editor) for superior editing experience
+- **Mermaid syntax highlighting**: Full syntax highlighting for Mermaid diagrams with custom language support
+- **Persistent horizontal scrollbars**: Horizontal scrollbars now always visible at bottom of editor, no need to scroll down vertically
+- **Improved scrollbar behavior**: Better overflow handling with reliable scrollbar visibility
+
+### Fixed
+- **Diagram preview scrollbars**: Fixed issue where scrollbars wouldn't appear after zooming until window resize
+- **Drag functionality**: Improved click-and-drag scrolling to work properly in both horizontal and vertical directions
+- **Pane controls**: Fixed arrow positioning and visibility in resizable split pane dividers
+- **Layout overflow**: Resolved issues where content overflow would affect entire window layout
+
+### Changed
+- **UI framework migration**: Converted entire application from custom CSS to TailwindCSS for consistent styling
+- **Editor controls**: Enhanced editor interface with Monaco Editor's superior UX and performance
+- **Icon improvements**: Replaced Unicode arrows with SVG icons for better reliability and appearance
+
 ## [1.2.0] - 2025-01-XX
 
 ### Added
@@ -48,7 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tauri IPC backend with Rust database operations
 - SQLite database persistence in app data directory
 
-[Unreleased]: https://github.com/buchenberg/MermaidUI/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/buchenberg/MermaidUI/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/buchenberg/MermaidUI/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/buchenberg/MermaidUI/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/buchenberg/MermaidUI/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/buchenberg/MermaidUI/releases/tag/v1.0.0

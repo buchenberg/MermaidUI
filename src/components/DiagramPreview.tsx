@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback, forwardRef } from "react";
 import mermaid from "mermaid";
-import "./DiagramPreview.css";
 
 interface DiagramPreviewProps {
   content: string;
@@ -39,9 +38,9 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
         } catch (error: any) {
           if (previewRef.current) {
             previewRef.current.innerHTML = `
-            <div class="error-message">
-              <h3>Error rendering diagram</h3>
-              <pre>${error.message}</pre>
+            <div class="p-4 text-red-600 bg-red-50 border border-red-200 rounded">
+              <h3 class="font-semibold mb-2">Error rendering diagram</h3>
+              <pre class="text-sm whitespace-pre-wrap">${error.message}</pre>
             </div>
           `;
           }
@@ -53,7 +52,7 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
 
     if (!content.trim()) {
       return (
-        <div className="preview-empty">
+        <div className="flex items-center justify-center h-full text-gray-500">
           <p>Enter Mermaid diagram code in the editor to see the preview</p>
         </div>
       );
@@ -63,6 +62,13 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
     useEffect(() => {
       if (previewRef.current) {
         applyZoomToPreview(previewRef.current, zoomLevel);
+        // Force scrollbar recalculation by triggering a reflow
+        const container = previewRef.current;
+        const originalOverflow = container.style.overflow;
+        container.style.overflow = "hidden";
+        // Force reflow
+        void container.offsetHeight;
+        container.style.overflow = originalOverflow;
       }
     }, [zoomLevel]);
 
@@ -71,8 +77,8 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
       if (!previewRef.current) return;
 
       setIsDragging(true);
-      setStartX(e.pageX - previewRef.current.offsetLeft);
-      setStartY(e.pageY - previewRef.current.offsetTop);
+      setStartX(e.pageX);
+      setStartY(e.pageY);
       setScrollLeft(previewRef.current.scrollLeft);
       setScrollTop(previewRef.current.scrollTop);
 
@@ -84,10 +90,8 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
       (e: MouseEvent) => {
         if (!isDragging || !previewRef.current) return;
 
-        const x = e.pageX - previewRef.current.offsetLeft;
-        const y = e.pageY - previewRef.current.offsetTop;
-        const walkX = (x - startX) * 2; // Multiply for faster scrolling
-        const walkY = (y - startY) * 2;
+        const walkX = (e.pageX - startX) * 2; // Multiply for faster scrolling
+        const walkY = (e.pageY - startY) * 2;
 
         previewRef.current.scrollLeft = scrollLeft - walkX;
         previewRef.current.scrollTop = scrollTop - walkY;
@@ -128,10 +132,12 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
     return (
       <div
         ref={combinedRef}
-        className="mermaid-preview"
+        className="w-full h-full overflow-auto bg-white"
         onMouseDown={handleMouseDown}
         style={{ cursor: isDragging ? "grabbing" : "grab" }}
-      />
+      >
+        {/* Content will be rendered here by mermaid */}
+      </div>
     );
   },
 );

@@ -3,7 +3,6 @@ import CollectionsBrowser from "./components/CollectionsBrowser";
 import DiagramEditor from "./components/DiagramEditor";
 import * as api from "./api";
 import type { Collection, Diagram } from "./api";
-import "./App.css";
 
 // Re-export types for components that import from App.tsx
 export type { Collection, Diagram };
@@ -122,16 +121,40 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <div className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
+    <div className="flex h-screen overflow-hidden">
+      <div
+        className={`flex flex-col bg-gray-100 border-r border-gray-300 transition-all duration-300 ${sidebarCollapsed ? "w-12" : "w-80"}`}
+      >
         <button
-          className="sidebar-toggle"
+          className="w-12 h-12 border-none bg-gray-100 border-b border-gray-300 cursor-pointer text-gray-600 flex items-center justify-center flex-shrink-0 transition-colors duration-200 hover:bg-gray-200 active:bg-gray-300"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {sidebarCollapsed ? "▶" : "◀"}
+          {sidebarCollapsed ? (
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          ) : (
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          )}
         </button>
-        <div className={sidebarCollapsed ? "collections-browser-hidden" : ""}>
+        <div className={sidebarCollapsed ? "hidden" : ""}>
           <CollectionsBrowser
             collections={collections}
             selectedCollection={selectedCollection}
@@ -145,7 +168,7 @@ function App() {
           />
         </div>
       </div>
-      <div className="main-content">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
         {selectedDiagram ? (
           <DiagramEditor
             diagram={selectedDiagram}
@@ -153,8 +176,8 @@ function App() {
             onSave={handleDiagramUpdate}
           />
         ) : (
-          <div className="welcome">
-            <h1>Welcome to MermaidUI</h1>
+          <div className="flex flex-col items-center justify-center h-full text-gray-600">
+            <h1 className="mb-4 text-gray-800">Welcome to MermaidUI</h1>
             <p>
               Select a collection from the sidebar to view diagrams, or create a
               new diagram.
