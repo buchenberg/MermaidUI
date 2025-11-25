@@ -2,7 +2,7 @@
 name = "mermaid-ui"
 version = "1.3.0"
 description = "Mermaid diagram viewer and editor"
-authors = ["you"]
+authors = ["Gregory Buchenberger"]
 license = ""
 repository = ""
 edition = "2021"
