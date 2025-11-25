@@ -1,0 +1,81 @@
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    user-select: none;
+}
+
+.zoom-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #ced4da;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    color: #495057;
+    transition: all 0.15s ease;
+}
+
+.zoom-btn:hover:not(:disabled) {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    color: #212529;
+}
+
+.zoom-btn:active:not(:disabled) {
+    background: #dee2e6;
+    transform: translateY(1px);
+}
+
+.zoom-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8f9fa;
+    color: #adb5bd;
+}
+
+.zoom-in {
+    font-size: 18px;
+}
+
+.zoom-out {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.zoom-reset {
+    width: auto;
+    padding: 0 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.zoom-display {
+    min-width: 50px;
+    text-align: center;
+    font-weight: 500;
+    color: #495057;
+}
+
+.zoom-export {
+    font-size: 14px;
+    padding: 0 6px;
+}
+
+.zoom-percentage {
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
