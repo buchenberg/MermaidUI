@@ -1,22 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import CodeMirror from "@uiw/react-codemirror";
-import { markdown } from "@codemirror/lang-markdown";
-import { oneDark } from "@codemirror/theme-one-dark";
+import Editor from "@monaco-editor/react";
 import DiagramPreview from "./DiagramPreview";
 import ResizableSplit from "./ResizableSplit";
 import ZoomControls from "./ZoomControls";
 import { Diagram } from "../App";
 import * as api from "../api";
-import "./DiagramEditor.css";
+import registerMermaidLanguage from "monaco-mermaid";
 
 interface DiagramEditorProps {
   diagram: Diagram;
   onUpdate: (id: number, name: string, content: string) => Promise<Diagram>;
   onSave: (id: number, name: string, content: string) => Promise<Diagram>;
-}
-
-interface ExportOptions {
-  format: "svg";
 }
 
 export default function DiagramEditor({
@@ -35,7 +29,22 @@ export default function DiagramEditor({
     const saved = localStorage.getItem("mermaid-ui-auto-save");
     return saved ? saved === "true" : false;
   });
-  const editorRef = useRef<{ editor: any } | null>(null);
+
+  const editorRef = useRef<any>(null);
+
+  // Handle Monaco Editor mount
+  const handleEditorMount = (editor: any, monaco: any) => {
+    editorRef.current = editor;
+    // Register Mermaid language with Monaco Editor
+    registerMermaidLanguage(monaco);
+  };
+
+  // Trigger layout refresh when zoom level changes
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.layout();
+    }
+  }, [zoomLevel]);
 
   useEffect(() => {
     setName(diagram.name);
@@ -167,33 +176,36 @@ export default function DiagramEditor({
   ]);
 
   return (
-    <div className="diagram-editor">
-      <div className="editor-content">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 min-h-0">
         <ResizableSplit
           left={
-            <div className="editor-pane">
-              <div className="editor-header">
+            <div className="h-full flex flex-col bg-gray-900 overflow-hidden">
+              <div className="flex justify-between items-center p-4 border-b border-gray-700 bg-white flex-shrink-0">
                 <input
                   type="text"
-                  className="diagram-name-input"
+                  className="flex-1 p-2 border border-gray-300 rounded text-base font-medium mr-4 max-w-xs"
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Diagram name"
                 />
-                <div className="header-actions">
-                  <label className="auto-save-toggle">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-600 select-none hover:text-gray-800">
                     <input
                       type="checkbox"
                       checked={autoSaveEnabled}
                       onChange={(e) => handleAutoSaveToggle(e.target.checked)}
+                      className="cursor-pointer w-4 h-4"
                     />
                     <span>Auto-save</span>
                   </label>
                   {hasChanges && (
-                    <span className="unsaved-indicator">Unsaved changes</span>
+                    <span className="text-orange-500 text-sm">
+                      Unsaved changes
+                    </span>
                   )}
                   <button
-                    className="btn-save"
+                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                     onClick={handleSave}
                     disabled={!hasChanges}
                   >
@@ -201,21 +213,40 @@ export default function DiagramEditor({
                   </button>
                 </div>
               </div>
-              <div className="editor-content-inner">
-                <CodeMirror
-                  value={content}
+              <div className="flex-1 overflow-hidden">
+                <Editor
                   height="100%"
-                  extensions={[markdown()]}
-                  theme={oneDark}
-                  onChange={(value) => handleContentChange(value)}
-                  placeholder="Enter your Mermaid diagram code here..."
+                  language="mermaid"
+                  theme="vs-dark"
+                  value={content}
+                  onChange={(value) => handleContentChange(value || "")}
+                  onMount={handleEditorMount}
+                  options={{
+                    automaticLayout: true,
+                    fontSize: 14,
+                    lineNumbers: "on",
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    wordWrap: "off",
+                    scrollbar: {
+                      vertical: "auto",
+                      horizontal: "auto",
+                      useShadows: false,
+                      verticalScrollbarSize: 10,
+                      horizontalScrollbarSize: 10,
+                      alwaysConsumeMouseWheel: false,
+                    },
+                    overviewRulerLanes: 0,
+                    lineDecorationsWidth: 10,
+                    scrollBeyondLastColumn: 5,
+                  }}
                 />
               </div>
             </div>
           }
           right={
-            <div className="preview-pane">
-              <div className="preview-header">
+            <div className="h-full flex flex-col bg-white overflow-hidden">
+              <div className="flex justify-end items-center p-4 border-b border-gray-300 bg-gray-50 flex-shrink-0">
                 <ZoomControls
                   zoomLevel={zoomLevel}
                   onZoomIn={handleZoomIn}
@@ -225,7 +256,7 @@ export default function DiagramEditor({
                   onExportMmd={handleExportMmd}
                 />
               </div>
-              <div className="preview-content">
+              <div className="flex-1 overflow-auto">
                 <DiagramPreview
                   content={content}
                   zoomLevel={zoomLevel}
