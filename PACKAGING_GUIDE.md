@@ -1,131 +1,107 @@
-# Tauri Packaging Guide for MermaidUI
+# Packaging and Releases
 
-## Current Status
+## Automated Releases (Recommended)
 
-✅ **The application is ready for packaging!** 
+MermaidUI uses **GitHub Actions** to automatically build and release the application when you push a version tag.
 
-The application has been fully migrated to use Tauri IPC for all backend operations. This means:
+### Creating a Release
 
-- ✅ No Node.js backend required
-- ✅ Database uses app data directory (works in packaged apps)
-- ✅ Frontend uses Tauri IPC (no HTTP server needed)
-- ✅ All dependencies are bundled with Tauri
+```bash
+# Patch release (1.3.0 → 1.3.1)
+npm run release
 
-## Architecture
+# Minor release (1.3.0 → 1.4.0)
+npm run release:minor
 
-The application uses a **two-tier architecture**:
+# Major release (1.3.0 → 2.0.0)
+npm run release:major
+```
 
-- **Frontend**: React + TypeScript + Vite (`src/`)
-- **Backend**: Rust (`src-tauri/src/`) - Tauri IPC commands handle all database operations
-- **Database**: SQLite via `rusqlite` - stored in app data directory
+The release script will:
+1. Bump the version in `package.json`, `Cargo.toml`, and `tauri.conf.json`
+2. Commit the version changes
+3. Create a git tag (e.g., `v1.3.1`)
+4. Push to GitHub
 
-## Database Location
+GitHub Actions will then automatically:
+- Build for Windows (`.exe`, `.msi`)
+- Build for macOS (`.dmg`, `.app`)
+- Build for Linux (`.deb`, `.AppImage`)
+- Create a GitHub Release with all artifacts attached
 
-The database is automatically stored in the appropriate app data directory for each platform:
+### Retrying a Failed Release
 
-- **Windows**: `%APPDATA%\com.mermaidui.app\mermaid-ui.db`
-- **macOS**: `~/Library/Application Support/com.mermaidui.app/mermaid-ui.db`
-- **Linux**: `~/.local/share/com.mermaidui.app/mermaid-ui.db`
+If the GitHub Actions build fails, fix the issue and re-run:
 
-This ensures the database persists across updates and works correctly in packaged applications.
+```bash
+npm run release:retag
+```
 
-## Building for Production
+This deletes and recreates the tag, triggering a new build.
 
-To build the application for distribution:
+---
+
+## Manual Building (Development)
+
+To build the application locally:
 
 ```bash
 npm run build
 ```
 
-This will:
-1. Build the frontend React app (outputs to `dist/`)
-2. Build the Tauri application bundle
-
-The built application will be in `src-tauri/target/release/` (or `debug` for debug builds).
+Built files are in `src-tauri/target/release/bundle/`.
 
 ### Platform-Specific Builds
-
-To build for a specific platform:
 
 ```bash
 # Windows
 npm run tauri build -- --target x86_64-pc-windows-msvc
 
-# macOS
+# macOS (Intel)
 npm run tauri build -- --target x86_64-apple-darwin
-# or for Apple Silicon
+
+# macOS (Apple Silicon)
 npm run tauri build -- --target aarch64-apple-darwin
 
 # Linux
 npm run tauri build -- --target x86_64-unknown-linux-gnu
 ```
 
-## Bundle Size
+---
 
-The application bundle includes:
-- Frontend React app (built with Vite)
-- Rust binary (Tauri runtime)
-- SQLite library (bundled with `rusqlite`)
-- Mermaid.js library
-- CodeMirror editor
+## Architecture
 
-No Node.js runtime or external dependencies are required!
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Rust (Tauri IPC commands)
+- **Database**: SQLite via `rusqlite` (stored in app data directory)
 
-## Packaging Considerations
+No Node.js runtime or external dependencies are required in the packaged app.
 
-### Database Migration
+### Database Location
 
-When users upgrade from an older version:
-- The database will automatically be created in the app data directory
-- Existing data from the old backend version won't be automatically migrated
-- Users will need to manually export/import if upgrading from the old Node.js backend version
+| Platform | Path |
+|----------|------|
+| Windows | `%APPDATA%\com.mermaidui.app\mermaid-ui.db` |
+| macOS | `~/Library/Application Support/com.mermaidui.app/mermaid-ui.db` |
+| Linux | `~/.local/share/com.mermaidui.app/mermaid-ui.db` |
 
-### Permissions
-
-The application requires:
-- **File system access**: To read/write the database in the app data directory
-- No network permissions needed (no HTTP server)
-
-These permissions are configured in `src-tauri/tauri.conf.json`.
-
-### Testing Before Release
-
-Before packaging, ensure:
-1. ✅ Database creates successfully in app data directory
-2. ✅ Collections and diagrams CRUD operations work
-3. ✅ File upload works correctly
-4. ✅ Auto-save functionality works
-5. ✅ Application works when launched from the bundle (not just dev mode)
-
-## Distribution
-
-After building, you can distribute:
-
-- **Windows**: `.exe` installer or `.msi` package (configured in `tauri.conf.json`)
-- **macOS**: `.dmg` or `.app` bundle
-- **Linux**: `.deb`, `.rpm`, or `.AppImage` (depending on configuration)
-
-The installer/packaging format is configured in `src-tauri/tauri.conf.json` under the `bundle` section.
+---
 
 ## Troubleshooting
 
-### Database Not Found
-
-If the database isn't being created:
-- Check that the app data directory exists (Tauri creates it automatically)
-- Verify file system permissions
-- Check console logs for database initialization errors
-
 ### Build Errors
 
-If you encounter build errors:
-- Ensure Rust toolchain is up to date: `rustup update`
-- Clear Tauri build cache: `rm -rf src-tauri/target`
-- Reinstall dependencies: `npm install`
+```bash
+# Update Rust toolchain
+rustup update
 
-## Future Enhancements
+# Clear build cache
+rm -rf src-tauri/target
+npm install
+```
 
-Potential improvements for future versions:
-- Database migration system for schema changes
-- Export functionality (if needed, can be implemented client-side or via Rust)
-- Plugin system for extending functionality
+### Database Not Found
+
+- Check that the app data directory exists (Tauri creates it automatically)
+- Verify file system permissions
+- Check console logs for initialization errors
