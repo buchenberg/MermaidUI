@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback, forwardRef } from "react";
 import mermaid from "mermaid";
+import { useTheme } from "../ThemeContext";
 
 interface DiagramPreviewProps {
   content: string;
@@ -15,6 +16,7 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
     const [startY, setStartY] = useState(0);
     const [scrollLeft, setScrollLeft] = useState(0);
     const [scrollTop, setScrollTop] = useState(0);
+    const { theme } = useTheme();
 
     useEffect(() => {
       if (!previewRef.current || !content.trim()) return;
@@ -23,7 +25,7 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
         try {
           mermaid.initialize({
             startOnLoad: false,
-            theme: "default",
+            theme: theme === 'dark' ? 'dark' : 'default',
             securityLevel: "loose",
           });
 
@@ -48,15 +50,7 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
       };
 
       renderDiagram();
-    }, [content]);
-
-    if (!content.trim()) {
-      return (
-        <div className="flex items-center justify-center h-full text-gray-500">
-          <p>Enter Mermaid diagram code in the editor to see the preview</p>
-        </div>
-      );
-    }
+    }, [content, theme]);
 
     // Apply zoom when zoomLevel changes
     useEffect(() => {
@@ -132,11 +126,18 @@ const DiagramPreview = forwardRef<HTMLDivElement, DiagramPreviewProps>(
     return (
       <div
         ref={combinedRef}
-        className="w-full h-full overflow-auto bg-white"
+        className="w-full h-full overflow-auto bg-white dark:bg-gray-900"
         onMouseDown={handleMouseDown}
         style={{ cursor: isDragging ? "grabbing" : "grab" }}
       >
-        {/* Content will be rendered here by mermaid */}
+        {!content.trim() ? (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            <p>Enter Mermaid diagram code in the editor to see the preview</p>
+          </div>
+        ) : (
+          /* Content will be rendered here by mermaid into the div */
+          null
+        )}
       </div>
     );
   },
